@@ -1,3 +1,0 @@
-C:/Cube Project/Cube_projiect1/build/Debug/CMakeFiles/light_on.elf.dir
-C:/Cube Project/Cube_projiect1/build/Debug/CMakeFiles/edit_cache.dir
-C:/Cube Project/Cube_projiect1/build/Debug/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,12 @@
+# 构建产物（不要提交）
+build/
+
+# 备份 / 临时文件
+*.bak
+*.serialbak
+*.swp
+*.orig
+
+# 系统文件
+Thumbs.db
+.DS_Store

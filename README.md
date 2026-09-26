@@ -1,43 +1,36 @@
-# light_on - STM32F407 GPIO 实操（PH10 蓝灯闪烁）
+# light_on - STM32F407 综合实验（GPIO / 中断 / PWM / 串口）
 
-按 PNX 知识库【基础】GPIO 实操教程完成：C 型开发板 RGB LED 蓝色通道 = PH10，
-GPIO 推挽输出、初始高电平，主循环翻转 + 500 ms 延时实现闪烁。
+硬件：STM32F407IGH6 (C型开发板)，ST-Link V2.1，HSE 12MHz -> 168MHz
 
-## 硬件
-- MCU: STM32F407IGH6 (UFBGA176)
-- 时钟: HSE 8 MHz -> PLL -> SYSCLK 168 MHz（CubeMX 时钟树）
-- 调试: SWD (PA13=SWDIO, PA14=SWCLK)，下载器 ST-Link
-- LED: PH10（蓝），输出高电平点亮
+## 功能
+1. 两灯同步/交替闪烁（PH11/PH12，500ms）
+2. PH10 呼吸灯（TIM5_CH1 PWM，4kHz，for 循环调占空比）
+3. 按键 PA0 中断：进入/退出『中断模式』（交替闪烁 + 呼吸灯）
+4. 串口 USART6 (PG14=TX, PG9=RX, 115200 8N1)：
+   - 上电发送 `I'm already`
+   - 收到 `start` -> 回复 `OK`（调试用）
+   - 收到 `change` -> 与按 PA0 等效，进入/退出中断模式，回复 `OK`
 
-## 软件环境
-- VS Code + Cortex-Debug 扩展
-- ARM GNU Toolchain 13.3 (arm-none-eabi-gcc)
-- CMake 4.4.3 + Ninja
-- OpenOCD 0.12.0 (sysprogs) + ST-Link WinUSB 驱动
+## 串口接线（重要）
+| ST-Link | 板子 | 说明 |
+|---|---|---|
+| VCP RX | PG14 (USART6_TX) | 单片机发、电脑收 |
+| VCP TX | PG9  (USART6_RX) | 电脑发、单片机收（必须交叉！） |
+| GND | GND | 共地 |
 
-## 构建
+> 踩坑记录：TX/RX 接反时，现象是『能收到上电消息，但发命令无回复』。
+> 用 ST-Link TX/RX 短接做回环测试，可快速确认 ST-Link 与电脑侧是否正常。
+
+## 电脑端终端
+```powershell
+powershell -ExecutionPolicy Bypass -File .\serial_term.ps1 -Port COM10
+```
+打开后输入 `start` 或 `change` 回车发送。
+
+## 构建 / 烧录
 ```powershell
 cmake --preset debug
 cmake --build --preset debug
+powershell -ExecutionPolicy Bypass -File .\flash.ps1
 ```
-产物: build/Debug/light_on.elf / .hex / .bin
-VS Code: Ctrl+Shift+B 运行 cmake-build-debug，或 F5 自动构建并调试。
-
-## 烧录
-VS Code: 选择 "STM32 Debug (STLink)" 按 F5。
-命令行: powershell -ExecutionPolicy Bypass -File .\flash.ps1
-
-## 已完成
-- [x] 程序编写 (Core/Src/main.c)
-- [x] GCC/CMake 构建系统
-- [x] 编译通过
-- [x] ST-Link WinUSB 驱动安装
-- [x] 烧录 + 校验通过（Verify OK, device id 0x10076413, flash 1024 KiB）
-
-## 备注
-- 原始 CubeMX 工程用 EWARM (IAR) 工具链生成，VS Code + GCC 无法直接编译；
-  本目录补充了 GCC/CMake 构建系统，未修改 .ioc 配置。
-- 构建时排除 HAL 的 *_template.c。
-- 链接器脚本来自 STM32CubeF4 固件包模板 (STM32F407IGHX_FLASH.ld)。
-- 之前的外部 ST-Link (VID_0483:PID_3748) 连接 SWD 失败；
-  换成 ST-Link/V2-1 (VID_0483:PID_374B) 后一次成功。
+VS Code：Ctrl+Shift+B 编译，F5 烧录调试（STM32 Debug (STLink)）。
